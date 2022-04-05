@@ -1,96 +1,73 @@
-import React from 'react'
+import React, { useState, useEffect, useCallback } from "react"
 import ReactDOM from 'react-dom'
+import {useDebouncedCallback} from 'use-debounce';
 
 import axios from 'axios'
 
 import PatientList from './PatientList'
 
-class PatientApp extends React.Component {
-    constructor(props) {
-        super(props)
-        this.state = {
-            patients: [],
-            hideCompletedPatients: false,
-            isLoading: true,
-            errorMessage: null,
+const PatientApp = () => {
+
+  const [patients, setPatients] = useState([])
+  const [hideCompletedPatients, setHideCompletedPatients] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [sortValue, setSortValue] = useState(null)
+  const [searchValue, setSearchValue] = useState(null)
+
+  useEffect(()=>{
+    axios
+      .get('/api/v1/patients',
+        {
+          params: {
+            sort_value: sortValue,
+            search_value: searchValue,
+          }
+        })
+      .then(response => {
+          setIsLoading(true)
+          const patients = response.data
+          setPatients(patients)
+          setIsLoading(false)
+      })
+      .catch(error => {
+          setIsLoading(true)
+          log.debug('There was an error loading your items...')
+      })
+  }, [sortValue, searchValue])
+
+  const handleSortValue = useCallback((sortValue) => {
+    setSortValue(sortValue)
+  }, []);
+
+  const onSearchBoxChange = useDebouncedCallback((value) => {
+    if (value){
+      setSearchValue(value)
+    }else{
+      setSearchValue(null)
+    }
+  }, 200);
+
+
+  return (
+    <>
+      <hr />
+      <h1>Patient Information</h1>
+
+      <input class="patient-app-input" type="text" placeholder="Search" name="search" onChange={(e)=> {
+        if (event?.target?.value){
+          onSearchBoxChange(event?.target?.value)
+        }else{
+          onSearchBoxChange(null)
         }
-        this.getPatients = this.getPatients.bind(this)
-        this.createPatient = this.createPatient.bind(this)
-        this.toggleCompletedPatients = this.toggleCompletedPatients.bind(this)
-        this.handleErrors = this.handleErrors.bind(this)
-        this.clearErrors = this.clearErrors.bind(this)
-    }
-    componentDidMount() {
-        this.getPatients()
-    }
-    getPatients() {
-        axios
-            .get('/api/v1/patients')
-            .then(response => {
-                this.clearErrors()
-                this.setState({ isLoading: true })
-                const patients = response.data
-                this.setState({ patients })
-                this.setState({ isLoading: false })
-            })
-            .catch(error => {
-                this.setState({ isLoading: true })
-                this.setState({
-                    errorMessage: {
-                        message:
-                            'There was an error loading your todo items...',
-                    },
-                })
-            })
-    }
-    createPatient(patient) {
-        const patients = [patient, ...this.state.patients]
-        this.setState({ patients })
-    }
-    toggleCompletedPatients() {
-        this.setState({
-            hideCompletedPatients: !this.state.hideCompletedPatients,
-        })
-    }
-    handleErrors(errorMessage) {
-        this.setState({ errorMessage })
-    }
-    clearErrors() {
-        this.setState({
-            errorMessage: null,
-        })
-    }
-    render() {
-        return (
-            <>
-                {this.state.errorMessage && (
-                    <div><h3>{this.state.errorMessage}</h3></div>
-                )}
-                {!this.state.isLoading && (
-                    <>
-                        <PatientList
-                            toggleCompletedPatients={
-                                this.toggleCompletedPatients
-                            }
-                            hideCompletedPatients={
-                                this.state.hideCompletedPatients
-                            }
-                        >
-                            {this.state.patients.map(patient => (
-                                <tr>
-                                  <td>{patient.name}</td>
-                                  <td>{patient.date}</td>
-                                  <td>{patient.number}</td>
-                                  <td>{patient.description}</td>
-                                </tr>
-                            ))}
-                        </PatientList>
-                    </>
-                )}
-                {this.state.isLoading && <h1>Loading</h1>}
-            </>
-        )
-    }
+      }} />
+      {!isLoading && (
+        <>
+          <PatientList handleSortValue={handleSortValue} sortValue={sortValue} patients={patients} />
+        </>
+      )}
+      {isLoading && <h1>Loading</h1>}
+    </>
+  )
 }
 
 document.addEventListener('turbolinks:load', () => {

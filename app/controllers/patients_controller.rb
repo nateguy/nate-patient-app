@@ -2,9 +2,6 @@ class PatientsController < ApplicationController
 
   def index
     @patients = Patient.all
-    # @patients = Patient.where(name: patient_params[:search])
-    #                    .order(sort_column + " " + sort_direction)
-    #                    .paginate(:per_page => 3, :page => product_params[:page])
   end
 
   def import
