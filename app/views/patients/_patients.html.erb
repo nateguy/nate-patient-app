@@ -1,0 +1,25 @@
+<%= hidden_field_tag :direction, params[:direction] %>
+<%= hidden_field_tag :sort, params[:sort] %>
+
+<table class="table table-sm table-bordered table-hover table-responsive pretty">
+	<thead class="thead-default">
+		<tr>
+			<th>Name</th>
+      <th>Date</th>
+			<th>Number</th>
+			<th>Description</th>
+		</tr>
+	</thead>
+	<% index = 0 %>
+	<% @patients.each do |patient| %>
+	<% index += 1 %>
+	<tbody>
+		<tr>
+			<td class="text-primary"><%= patient.name %></td>
+			<td class="text-primary"><%= patient.date.strftime("%B %e, %Y") %></td>
+			<td class="text-primary price"><%= patient.number %></td>
+			<td class="text-primary"><%= patient.description %></td>
+		</tr>
+	</tbody>
+	<% end %>
+</div>
